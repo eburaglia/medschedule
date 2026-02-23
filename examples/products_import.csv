@@ -1,0 +1,9 @@
+nome,descricao,categoria,profissional_email,preco,comissao,visivel,preco_visivel,status
+Consulta Pediátrica,Consulta com pediatra,Consultas,pediatra@exemplo.com,35000,40,sim,nao,active
+Consulta Cardiológica,Consulta com cardiologista,Consultas,cardio@exemplo.com,40000,40,sim,nao,active
+Exame de Sangue,Coleta e análise,Exames,lab@exemplo.com,8000,30,sim,sim,active
+Ressonância Magnética,Exame de imagem,Exames,radio@exemplo.com,120000,35,sim,sim,active
+Fisioterapia Esportiva,Sessão de fisioterapia,Fisioterapia,fisio@exemplo.com,9000,50,sim,nao,active
+Consulta Psicológica,Sessão de terapia,Psicologia,psi@exemplo.com,15000,40,sim,nao,active
+Vacina Gripe,Aplicação de vacina contra gripe,Vacinas,enfermeiro@exemplo.com,12000,20,sim,sim,active
+Acompanhamento Nutricional,Consulta de nutrição,Nutrição, nutri@exemplo.com,12000,40,sim,nao,active

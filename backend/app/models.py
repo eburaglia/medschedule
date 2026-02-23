@@ -48,7 +48,7 @@ class Tenant(Base):
     updated_users = relationship("User", foreign_keys="User.updated_by_id", back_populates="updater")
     # NOVO: Relacionamento com categorias
     categories = relationship("Category", secondary="tenant_categories", back_populates="tenants")
-
+    products = relationship("Product", back_populates="tenant")
 class Role(Base):
     __tablename__ = 'roles'
     
@@ -112,7 +112,10 @@ class User(Base):
     tenants = relationship("Tenant", secondary=user_tenants, back_populates="users")
     appointments = relationship("Appointment", back_populates="user")
     payments = relationship("Payment", back_populates="user")  # Para histórico de pagamentos
-    
+    # NOVOS relacionamentos
+    professional_products = relationship("Product", foreign_keys="Product.professional_id", back_populates="professional")
+    created_products = relationship("Product", foreign_keys="Product.created_by_id", back_populates="created_by")
+    updated_products = relationship("Product", foreign_keys="Product.updated_by_id", back_populates="updated_by")    
     # Relacionamentos de auditoria
     creator = relationship("User", foreign_keys=[created_by_id], remote_side=[id], back_populates="created_users")
     updater = relationship("User", foreign_keys=[updated_by_id], remote_side=[id], back_populates="updated_users")
@@ -186,14 +189,13 @@ class Category(Base):
     # Relacionamentos
     created_by = relationship("User", foreign_keys=[created_by_id], back_populates="created_categories")
     updated_by = relationship("User", foreign_keys=[updated_by_id], back_populates="updated_categories")
-    
+    # NOVO relacionamento
+    products = relationship("Product", back_populates="category")
     # Relacionamento com tenants (muitos-para-muitos)
     tenants = relationship("Tenant", secondary="tenant_categories", back_populates="categories")
 
-# Tabela de associação entre categorias e tenants
-tenant_categories = Table(
-    'tenant_categories',
-    Base.metadata,
+    # Tabela de associação entre categorias e tenants
+    tenant_categories = Table('tenant_categories', Base.metadata,
     Column('tenant_id', Integer, ForeignKey('tenants.id'), primary_key=True),
     Column('category_id', UUID(as_uuid=True), ForeignKey('categories.id'), primary_key=True),
     Column('created_at', DateTime(timezone=True), server_default=func.now()),
@@ -203,3 +205,66 @@ tenant_categories = Table(
 # Atualizar modelo Tenant para incluir categorias
 # Adicionar no modelo Tenant existente:
 # categories = relationship("Category", secondary="tenant_categories", back_populates="tenants")
+
+class ProductStatus(enum.Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+class Product(Base):
+    __tablename__ = 'products'
+
+    # UUID como chave primária
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+
+    # Auditoria
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=False, server_default=func.now())
+    updated_by_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+
+    # Soft delete
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    is_deleted = Column(Boolean, default=False)
+
+    # Status
+    status = Column(Enum(ProductStatus), default=ProductStatus.ACTIVE, nullable=False)
+
+    # Dados do produto
+    name = Column(String(200), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    photo_url = Column(String(500), nullable=True)
+    price = Column(Integer, nullable=True)  # Preço em centavos
+
+    # Comissão do profissional (percentual)
+    professional_commission = Column(Integer, nullable=False)  # Ex: 30 para 30%
+
+    # Visibilidade
+    product_visible_to_end_user = Column(Boolean, default=True, nullable=False)
+    price_visible_to_end_user = Column(Boolean, default=False, nullable=False)
+
+    # Relacionamentos
+    category_id = Column(UUID(as_uuid=True), ForeignKey('categories.id'), nullable=False)
+    professional_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    tenant_id = Column(Integer, ForeignKey('tenants.id'), nullable=False)
+
+    created_by = relationship("User", foreign_keys=[created_by_id], back_populates="created_products")
+    updated_by = relationship("User", foreign_keys=[updated_by_id], back_populates="updated_products")
+    category = relationship("Category", back_populates="products")
+    professional = relationship("User", foreign_keys=[professional_id], back_populates="professional_products")
+    tenant = relationship("Tenant", back_populates="products")
+
+# Atualizar modelo User para incluir produtos como profissional
+# Adicionar no modelo User existente:
+# professional_products = relationship("Product", foreign_keys="Product.professional_id", back_populates="professional")
+# created_products = relationship("Product", foreign_keys="Product.created_by_id", back_populates="created_by")
+# updated_products = relationship("Product", foreign_keys="Product.updated_by_id", back_populates="updated_by")
+
+# Atualizar modelo Category para incluir produtos
+# Adicionar no modelo Category existente:
+# products = relationship("Product", back_populates="category")
+
+# Atualizar modelo Tenant para incluir produtos
+# Adicionar no modelo Tenant existente:
+# products = relationship("Product", back_populates="tenant")
+
+

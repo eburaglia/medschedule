@@ -250,3 +250,88 @@ class CategoryImportResult(BaseModel):
     new_records: int
     duplicates_found: List[dict]
     errors: List[dict]
+
+class ProductStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+# Schemas para Produto
+class ProductBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    photo_url: Optional[str] = None
+    price: Optional[int] = None  # Em centavos
+    professional_commission: int = Field(..., ge=0, le=100, description="Percentual de 0 a 100")
+    product_visible_to_end_user: bool = True
+    price_visible_to_end_user: bool = False
+    status: ProductStatus = ProductStatus.ACTIVE
+
+class ProductCreate(ProductBase):
+    category_id: uuid.UUID
+    professional_id: uuid.UUID
+    tenant_id: int
+
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    photo_url: Optional[str] = None
+    price: Optional[int] = None
+    professional_commission: Optional[int] = Field(None, ge=0, le=100)
+    product_visible_to_end_user: Optional[bool] = None
+    price_visible_to_end_user: Optional[bool] = None
+    status: Optional[ProductStatus] = None
+    category_id: Optional[uuid.UUID] = None
+    professional_id: Optional[uuid.UUID] = None
+
+class ProductInDB(ProductBase):
+    id: uuid.UUID
+    created_at: datetime
+    created_by_id: uuid.UUID
+    updated_at: datetime
+    updated_by_id: uuid.UUID
+    category_id: uuid.UUID
+    professional_id: uuid.UUID
+    tenant_id: int
+    
+    # Relacionamentos
+    category: Optional[Category] = None
+    professional: Optional[UserPublic] = None
+    tenant: Optional[Tenant] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class Product(ProductInDB):
+    pass
+
+# Schema para resposta pública (sem preço se não visível)
+class ProductPublic(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: Optional[str] = None
+    photo_url: Optional[str] = None
+    price: Optional[int] = None  # Será None se price_visible_to_end_user = False
+    professional_name: str
+    category_name: str
+    
+    model_config = ConfigDict(from_attributes=True)
+
+# Schema para importação
+class ProductImport(BaseModel):
+    name: str
+    description: Optional[str] = None
+    photo_url: Optional[str] = None
+    price: Optional[int] = None
+    professional_commission: int = Field(..., ge=0, le=100)
+    product_visible_to_end_user: bool = True
+    price_visible_to_end_user: bool = False
+    status: ProductStatus = ProductStatus.ACTIVE
+    category_name: str  # Nome da categoria (para lookup)
+    professional_email: str  # Email do profissional (para lookup)
+    tenant_subdomain: str  # Subdomínio do tenant (para lookup)
+
+class ProductImportResult(BaseModel):
+    total_records: int
+    new_records: int
+    duplicates_found: List[dict]
+    errors: List[dict]
+
