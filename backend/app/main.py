@@ -1,8 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.database import engine, Base
+from app.routes import auth, tenants, users, roles, appointments
 
-app = FastAPI(title="Medschedule")
+# Criar tabelas no banco de dados
+Base.metadata.create_all(bind=engine)
 
+app = FastAPI(
+    title="Medschedule - Sistema de Agendamento Multi-tenant",
+    description="API para sistema de agendamento com arquitetura multi-tenant",
+    version="0.2.0"
+)
+
+# Configuração CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -14,11 +24,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Incluir rotas
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(tenants.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")
+app.include_router(roles.router, prefix="/api/v1")
+app.include_router(appointments.router, prefix="/api/v1")
+
 @app.get("/")
 async def root():
     return {
-        "message": "Medschedule Online",
-        "version": "0.1.0",
+        "message": "Medschedule API",
+        "version": "0.2.0",
+        "status": "online",
+        "endpoints": {
+            "auth": "/api/v1/auth",
+            "tenants": "/api/v1/tenants",
+            "users": "/api/v1/users",
+            "roles": "/api/v1/roles",
+            "appointments": "/api/v1/appointments"
+        },
         "ports": {
             "backend": 50800,
             "frontend": 50300,
