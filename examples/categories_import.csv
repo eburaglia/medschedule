@@ -1,0 +1,11 @@
+nome,descricao,status
+Consultas,Consultas médicas e odontológicas,active
+Exames,Exames laboratoriais e de imagem,active
+Procedimentos,Procedimentos cirúrgicos e ambulatoriais,active
+Consultas de Retorno,Consultas de acompanhamento,active
+Telemedicina,Consultas por videochamada,active
+Emergência,Atendimentos de urgência e emergência,active
+Vacinas,Aplicação de vacinas,active
+Fisioterapia,Sessões de fisioterapia,active
+Psicologia,Sessões de terapia psicológica,active
+Nutrição,Consultas nutricionais,active

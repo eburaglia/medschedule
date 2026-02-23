@@ -41,11 +41,13 @@ class Tenant(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # Relacionamentos
+    # Relacionamentos existentes
     users = relationship("User", secondary=user_tenants, back_populates="tenants")
     appointments = relationship("Appointment", back_populates="tenant")
     created_users = relationship("User", foreign_keys="User.created_by_id", back_populates="creator")
     updated_users = relationship("User", foreign_keys="User.updated_by_id", back_populates="updater")
+    # NOVO: Relacionamento com categorias
+    categories = relationship("Category", secondary="tenant_categories", back_populates="tenants")
 
 class Role(Base):
     __tablename__ = 'roles'
@@ -152,3 +154,52 @@ class Payment(Base):
     
     user = relationship("User", back_populates="payments")
     appointment = relationship("Appointment")
+
+
+class CategoryStatus(enum.Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+class Category(Base):
+    __tablename__ = 'categories'
+    
+    # UUID como chave primária
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    
+    # Auditoria
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=False, server_default=func.now())
+    updated_by_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    
+    # Soft delete
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    is_deleted = Column(Boolean, default=False)
+    
+    # Status
+    status = Column(Enum(CategoryStatus), default=CategoryStatus.ACTIVE, nullable=False)
+    
+    # Dados da categoria
+    name = Column(String(100), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    
+    # Relacionamentos
+    created_by = relationship("User", foreign_keys=[created_by_id], back_populates="created_categories")
+    updated_by = relationship("User", foreign_keys=[updated_by_id], back_populates="updated_categories")
+    
+    # Relacionamento com tenants (muitos-para-muitos)
+    tenants = relationship("Tenant", secondary="tenant_categories", back_populates="categories")
+
+# Tabela de associação entre categorias e tenants
+tenant_categories = Table(
+    'tenant_categories',
+    Base.metadata,
+    Column('tenant_id', Integer, ForeignKey('tenants.id'), primary_key=True),
+    Column('category_id', UUID(as_uuid=True), ForeignKey('categories.id'), primary_key=True),
+    Column('created_at', DateTime(timezone=True), server_default=func.now()),
+    Column('created_by_id', UUID(as_uuid=True), ForeignKey('users.id'))
+)
+
+# Atualizar modelo Tenant para incluir categorias
+# Adicionar no modelo Tenant existente:
+# categories = relationship("Category", secondary="tenant_categories", back_populates="tenants")

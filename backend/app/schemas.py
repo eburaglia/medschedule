@@ -205,3 +205,48 @@ class TokenData(BaseModel):
 class UserLogin(BaseModel):
     username: str  # Pode ser email ou CPF
     password: str
+
+# Enums para Categoria
+class CategoryStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+# Schemas para Categoria
+class CategoryBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    status: CategoryStatus = CategoryStatus.ACTIVE
+
+class CategoryCreate(CategoryBase):
+    tenant_ids: List[int] = []  # Tenants que terão acesso a esta categoria
+
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[CategoryStatus] = None
+    tenant_ids: Optional[List[int]] = None
+
+class CategoryInDB(CategoryBase):
+    id: uuid.UUID
+    created_at: datetime
+    created_by_id: uuid.UUID
+    updated_at: datetime
+    updated_by_id: uuid.UUID
+    tenants: List[Tenant] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+class Category(CategoryInDB):
+    pass
+
+# Schema para importação
+class CategoryImport(BaseModel):
+    name: str
+    description: Optional[str] = None
+    status: CategoryStatus = CategoryStatus.ACTIVE
+
+class CategoryImportResult(BaseModel):
+    total_records: int
+    new_records: int
+    duplicates_found: List[dict]
+    errors: List[dict]
