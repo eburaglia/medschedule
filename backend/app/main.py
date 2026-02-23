@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routes import auth, tenants, users, roles, appointments, categories, products
+from app.routes import auth, tenants, users, roles, appointments, categories, products, schedules
 
 # Criar tabelas no banco de dados
 Base.metadata.create_all(bind=engine)
@@ -38,7 +38,7 @@ app.include_router(products.router, prefix="/api/v1")
 async def root():
     return {
         "message": "Medschedule API",
-        "version": "0.4.0",
+        "version": "0.5.0",
         "status": "online",
         "endpoints": {
             "auth": "/api/v1/auth",
@@ -47,7 +47,8 @@ async def root():
             "roles": "/api/v1/roles",
             "appointments": "/api/v1/appointments",
             "categories": "/api/v1/categories",
-            "products": "/api/v1/products"  # Novo endpoint
+            "products": "/api/v1/products",
+            "schedules": "/api/v1/schedules"# Novo endpoint
 
         },
         "ports": {

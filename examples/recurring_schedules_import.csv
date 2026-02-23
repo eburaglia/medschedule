@@ -1,0 +1,3 @@
+profissional_email,usuario_email,categoria,produto,data_inicio,data_fim,preco,recorrencia,dias_recorrencia,data_fim_recorrencia
+pediatra@exemplo.com,paciente1@email.com,Consultas,Consulta Pediátrica,2024-01-15 09:00,2024-01-15 10:00,35000,weekly,"monday,wednesday,friday",2024-03-30
+fisio@exemplo.com,paciente4@email.com,Fisioterapia,Fisioterapia Esportiva,2024-01-16 14:00,2024-01-16 15:00,9000,weekly,"tuesday,thursday",2024-02-28

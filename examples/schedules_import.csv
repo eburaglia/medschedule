@@ -1,0 +1,6 @@
+profissional_email,usuario_email,categoria,produto,data_inicio,data_fim,preco
+pediatra@exemplo.com,paciente1@email.com,Consultas,Consulta Pediátrica,2024-01-15 09:00,2024-01-15 10:00,35000
+cardio@exemplo.com,paciente2@email.com,Consultas,Consulta Cardiológica,2024-01-15 10:30,2024-01-15 11:30,40000
+lab@exemplo.com,paciente3@email.com,Exames,Exame de Sangue,2024-01-16 08:00,2024-01-16 08:30,8000
+fisio@exemplo.com,paciente4@email.com,Fisioterapia,Fisioterapia Esportiva,2024-01-16 14:00,2024-01-16 15:00,9000
+psi@exemplo.com,paciente5@email.com,Psicologia,Consulta Psicológica,2024-01-17 15:00,2024-01-17 16:00,15000

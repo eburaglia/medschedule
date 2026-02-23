@@ -335,3 +335,139 @@ class ProductImportResult(BaseModel):
     duplicates_found: List[dict]
     errors: List[dict]
 
+
+
+# Enums para Schedule
+class ScheduleStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+
+class WeekDay(str, Enum):
+    MONDAY = "monday"
+    TUESDAY = "tuesday"
+    WEDNESDAY = "wednesday"
+    THURSDAY = "thursday"
+    FRIDAY = "friday"
+    SATURDAY = "saturday"
+    SUNDAY = "sunday"
+
+class RecurrenceType(str, Enum):
+    NONE = "none"
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    BIWEEKLY = "biweekly"
+    MONTHLY = "monthly"
+
+# Schemas para Schedule
+class ScheduleBase(BaseModel):
+    start_date: datetime
+    end_date: datetime
+    service_price: Optional[int] = None
+    status: ScheduleStatus = ScheduleStatus.ACTIVE
+    recurrence_type: RecurrenceType = RecurrenceType.NONE
+    recurrence_end_date: Optional[datetime] = None
+    recurrence_days: Optional[List[WeekDay]] = None
+
+class ScheduleCreate(ScheduleBase):
+    provider_id: uuid.UUID
+    user_id: uuid.UUID
+    category_id: uuid.UUID
+    product_id: uuid.UUID
+    tenant_id: int
+
+class ScheduleUpdate(BaseModel):
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    service_price: Optional[int] = None
+    status: Optional[ScheduleStatus] = None
+    provider_id: Optional[uuid.UUID] = None
+    user_id: Optional[uuid.UUID] = None
+    category_id: Optional[uuid.UUID] = None
+    product_id: Optional[uuid.UUID] = None
+    recurrence_type: Optional[RecurrenceType] = None
+    recurrence_end_date: Optional[datetime] = None
+    recurrence_days: Optional[List[WeekDay]] = None
+
+class ScheduleInDB(ScheduleBase):
+    id: uuid.UUID
+    created_at: datetime
+    created_by_id: uuid.UUID
+    updated_at: datetime
+    updated_by_id: uuid.UUID
+    provider_id: uuid.UUID
+    user_id: uuid.UUID
+    category_id: uuid.UUID
+    product_id: uuid.UUID
+    tenant_id: int
+    
+    # Relacionamentos
+    provider: Optional[UserPublic] = None
+    user: Optional[UserPublic] = None
+    category: Optional[Category] = None
+    product: Optional[Product] = None
+    tenant: Optional[Tenant] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class Schedule(ScheduleInDB):
+    pass
+
+# Schema para instância de recorrência
+class RecurringInstance(BaseModel):
+    id: uuid.UUID
+    parent_schedule_id: uuid.UUID
+    instance_date: datetime
+    status: ScheduleStatus
+    notes: Optional[str] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+# Schema para visualização de calendário
+class CalendarView(BaseModel):
+    date: date
+    schedules: List[Schedule]
+
+# Schema para criação de múltiplos agendamentos
+class BulkScheduleCreate(BaseModel):
+    provider_id: uuid.UUID
+    user_id: uuid.UUID
+    category_id: uuid.UUID
+    product_id: uuid.UUID
+    tenant_id: int
+    start_time: str  # Formato: "HH:MM"
+    end_time: str  # Formato: "HH:MM"
+    days: List[WeekDay]  # Dias da semana
+    start_date: date
+    end_date: Optional[date] = None  # Se None, cria para sempre
+    service_price: Optional[int] = None
+
+# Schema para verificação de disponibilidade
+class AvailabilityCheck(BaseModel):
+    provider_id: uuid.UUID
+    date: date
+    start_time: str
+    end_time: str
+
+# Schema para importação
+class ScheduleImport(BaseModel):
+    provider_email: str
+    user_email: str
+    category_name: str
+    product_name: str
+    start_date: str  # Formato: YYYY-MM-DD HH:MM
+    end_date: str  # Formato: YYYY-MM-DD HH:MM
+    service_price: Optional[int] = None
+    status: ScheduleStatus = ScheduleStatus.ACTIVE
+    recurrence_type: RecurrenceType = RecurrenceType.NONE
+    recurrence_end_date: Optional[str] = None
+    recurrence_days: Optional[str] = None  # Ex: "monday,wednesday,friday"
+
+class ScheduleImportResult(BaseModel):
+    total_records: int
+    new_records: int
+    duplicates_found: List[dict]
+    conflicts_found: List[dict]  # Conflitos de horário
+    errors: List[dict]
+

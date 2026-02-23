@@ -49,6 +49,8 @@ class Tenant(Base):
     # NOVO: Relacionamento com categorias
     categories = relationship("Category", secondary="tenant_categories", back_populates="tenants")
     products = relationship("Product", back_populates="tenant")
+    schedules = relationship("Schedule", back_populates="tenant")
+
 class Role(Base):
     __tablename__ = 'roles'
     
@@ -116,6 +118,10 @@ class User(Base):
     professional_products = relationship("Product", foreign_keys="Product.professional_id", back_populates="professional")
     created_products = relationship("Product", foreign_keys="Product.created_by_id", back_populates="created_by")
     updated_products = relationship("Product", foreign_keys="Product.updated_by_id", back_populates="updated_by")    
+    provider_schedules = relationship("Schedule", foreign_keys="Schedule.provider_id", back_populates="provider")
+    user_schedules = relationship("Schedule", foreign_keys="Schedule.user_id", back_populates="user")
+    created_schedules = relationship("Schedule", foreign_keys="Schedule.created_by_id", back_populates="created_by")
+    updated_schedules = relationship("Schedule", foreign_keys="Schedule.updated_by_id", back_populates="updated_by")
     # Relacionamentos de auditoria
     creator = relationship("User", foreign_keys=[created_by_id], remote_side=[id], back_populates="created_users")
     updater = relationship("User", foreign_keys=[updated_by_id], remote_side=[id], back_populates="updated_users")
@@ -191,6 +197,8 @@ class Category(Base):
     updated_by = relationship("User", foreign_keys=[updated_by_id], back_populates="updated_categories")
     # NOVO relacionamento
     products = relationship("Product", back_populates="category")
+    schedules = relationship("Schedule", back_populates="category")
+
     # Relacionamento com tenants (muitos-para-muitos)
     tenants = relationship("Tenant", secondary="tenant_categories", back_populates="categories")
 
@@ -246,7 +254,7 @@ class Product(Base):
     category_id = Column(UUID(as_uuid=True), ForeignKey('categories.id'), nullable=False)
     professional_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
     tenant_id = Column(Integer, ForeignKey('tenants.id'), nullable=False)
-
+    schedules = relationship("Schedule", back_populates="product")
     created_by = relationship("User", foreign_keys=[created_by_id], back_populates="created_products")
     updated_by = relationship("User", foreign_keys=[updated_by_id], back_populates="updated_products")
     category = relationship("Category", back_populates="products")
@@ -266,5 +274,97 @@ class Product(Base):
 # Atualizar modelo Tenant para incluir produtos
 # Adicionar no modelo Tenant existente:
 # products = relationship("Product", back_populates="tenant")
+
+class ScheduleStatus(enum.Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+
+class WeekDay(enum.Enum):
+    MONDAY = "monday"
+    TUESDAY = "tuesday"
+    WEDNESDAY = "wednesday"
+    THURSDAY = "thursday"
+    FRIDAY = "friday"
+    SATURDAY = "saturday"
+    SUNDAY = "sunday"
+
+class RecurrenceType(enum.Enum):
+    NONE = "none"  # Agendamento único
+    DAILY = "daily"  # Todos os dias
+    WEEKLY = "weekly"  # Semanalmente
+    BIWEEKLY = "biweekly"  # Quinzenal
+    MONTHLY = "monthly"  # Mensal
+
+class Schedule(Base):
+    __tablename__ = 'schedules'
+    
+    # UUID como chave primária
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    
+    # Auditoria
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=False, server_default=func.now())
+    updated_by_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    
+    # Soft delete
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    is_deleted = Column(Boolean, default=False)
+    
+    # Status
+    status = Column(Enum(ScheduleStatus), default=ScheduleStatus.ACTIVE, nullable=False)
+    
+    # Datas do agendamento
+    start_date = Column(DateTime(timezone=True), nullable=False)  # Data/hora de início
+    end_date = Column(DateTime(timezone=True), nullable=False)  # Data/hora de término
+    
+    # Preço do serviço (pode ser diferente do preço do produto)
+    service_price = Column(Integer, nullable=True)  # Em centavos
+    
+    # Recorrência
+    recurrence_type = Column(Enum(RecurrenceType), default=RecurrenceType.NONE, nullable=False)
+    recurrence_end_date = Column(DateTime(timezone=True), nullable=True)  # Data final da recorrência
+    recurrence_days = Column(Text, nullable=True)  # Dias da semana em formato JSON: ["monday","wednesday","friday"]
+    
+    # Relacionamentos
+    provider_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    category_id = Column(UUID(as_uuid=True), ForeignKey('categories.id'), nullable=False)
+    product_id = Column(UUID(as_uuid=True), ForeignKey('products.id'), nullable=False)
+    tenant_id = Column(Integer, ForeignKey('tenants.id'), nullable=False)
+    
+    # Relacionamentos
+    created_by = relationship("User", foreign_keys=[created_by_id], back_populates="created_schedules")
+    updated_by = relationship("User", foreign_keys=[updated_by_id], back_populates="updated_schedules")
+    provider = relationship("User", foreign_keys=[provider_id], back_populates="provider_schedules")
+    user = relationship("User", foreign_keys=[user_id], back_populates="user_schedules")
+    category = relationship("Category", back_populates="schedules")
+    product = relationship("Product", back_populates="schedules")
+    tenant = relationship("Tenant", back_populates="schedules")
+
+# Tabela para agendamentos recorrentes gerados
+class RecurringScheduleInstance(Base):
+    __tablename__ = 'recurring_schedule_instances'
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    
+    # Referência ao agendamento pai
+    parent_schedule_id = Column(UUID(as_uuid=True), ForeignKey('schedules.id'), nullable=False)
+    
+    # Data específica desta instância
+    instance_date = Column(DateTime(timezone=True), nullable=False)
+    
+    # Status específico desta instância (pode ser cancelada individualmente)
+    status = Column(Enum(ScheduleStatus), default=ScheduleStatus.ACTIVE, nullable=False)
+    
+    # Observações específicas para esta instância
+    notes = Column(Text, nullable=True)
+    
+    # Relacionamentos
+    parent_schedule = relationship("Schedule", foreign_keys=[parent_schedule_id])
+
+
 
 
