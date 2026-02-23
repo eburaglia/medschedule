@@ -2,20 +2,16 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Instalar dependências do sistema necessárias
-RUN apk add --no-cache python3 make g++
-
 # Copiar package files
 COPY package*.json ./
 
-# Instalar dependências
-RUN npm install
+# Instalar dependências com cache limpo
+RUN npm cache clean --force && \
+    npm install --legacy-peer-deps
 
-# Copiar código da aplicação
+# Copiar código
 COPY . .
 
-# Expor porta
 EXPOSE 3000
 
-# Comando padrão
 CMD ["npm", "start"]

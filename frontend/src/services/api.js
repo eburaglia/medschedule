@@ -10,18 +10,9 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    // Adicionar tenant ID se disponível
-    const tenantId = localStorage.getItem('tenantId');
-    if (tenantId) {
-      config.headers['X-Tenant-ID'] = tenantId;
-    }
-    
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
