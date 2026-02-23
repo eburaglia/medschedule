@@ -1,0 +1,125 @@
+RESUMO DO QUE JÁ FOI FEITO
+
+FASE 1: INFRAESTRUTURA BASE ✅
+Estrutura de Diretórios
+
+/opt/medschedule/
+├── backend/           # API Python/FastAPI
+├── frontend/          # React App
+├── infra/             # Configurações Docker/PM2
+│   ├── postgres/      
+│   └── pm2/           
+└── scripts/           # Scripts utilitários
+
+
+Configuração Docker com High Ports (50000-60000)
+PostgreSQL: porta 54320 → 5432
+Backend API: porta 50800 → 8000
+Frontend: porta 50300 → 3000
+PM2 Monitor: porta 50301 → 3001
+
+Orquestração com PM2
+Gerenciamento dos processos backend e frontend
+Auto-reload em desenvolvimento
+Monitoramento de logs
+
+
+
+
+FASE 2: MODELO MULTI-TENANT ✅
+
+Modelos de Dados Implementados
+- Tenant: Representa cada cliente/organização
+- User: Usuários do sistema
+- Role: Perfis de acesso (super_admin, tenant_admin, manager, user)
+- Appointment: Agendamentos vinculados a tenant + usuário
+
+Relacionamentos Complexos
+- User ←→ Roles (muitos-para-muitos)
+- User ←→ Tenants (muitos-para-muitos)
+- Tenant 1→n Appointments
+- User 1→n Appointments
+
+Segurança e Autenticação
+- JWT Tokens
+- Hash de senhas com bcrypt
+- Verificação de permissões por role
+- Middleware multi-tenant com header X-Tenant-ID
+
+Endpoints da API
+Autenticação:
+- POST /api/v1/auth/token     # Login
+- POST /api/v1/auth/register  # Registro
+- GET  /api/v1/auth/me        # Dados do usuário
+
+Tenants (apenas super_admin):
+- GET    /api/v1/tenants      # Listar todos
+- POST   /api/v1/tenants      # Criar novo
+- GET    /api/v1/tenants/{id} # Detalhes
+- PUT    /api/v1/tenants/{id} # Atualizar
+- DELETE /api/v1/tenants/{id} # Deletar
+
+Users:
+- GET    /api/v1/users        # Listar (super_admin)
+- POST   /api/v1/users/{id}/roles/{role_id}   # Atribuir role
+- POST   /api/v1/users/{id}/tenants/{tenant_id} # Atribuir tenant
+
+Roles (apenas super_admin):
+- GET    /api/v1/roles        # Listar todas
+- POST   /api/v1/roles        # Criar nova
+
+Appointments:
+- GET    /api/v1/appointments  # Listar (filtrado por tenant)
+- POST   /api/v1/appointments  # Criar
+- GET    /api/v1/appointments/{id} # Detalhes
+- PUT    /api/v1/appointments/{id} # Atualizar
+- DELETE /api/v1/appointments/{id} # Deletar
+
+FASE 3: INICIALIZAÇÃO ✅
+
+Scripts Automatizados
+- scripts/setup.sh: Configuração completa do ambiente
+- Inicialização automática das roles padrão no banco
+
+Roles Padrão Criadas
+super_admin: Acesso irrestrito a todos os tenants
+tenant_admin: Administrador de um tenant específico
+manager: Gerente com permissões intermediárias
+user: Usuário comum
+
+
+
+
+
+
+
+
+
+
+Checklist do que temos até agora:
+Infraestrutura Pronta:
+Docker com high ports (50000-60000)
+PostgreSQL configurado
+Backend FastAPI estrutural
+Frontend React base
+PM2 para orquestração
+GitHub inicializado
+
+Backend Multi-tenant Pronto:
+Modelos de dados (Tenant, User, Role, Appointment)
+Autenticação JWT
+Sistema de roles/permissões
+Middleware multi-tenant
+Endpoints da API
+Roles padrão criadas
+
+Quando você fizer o levantamento das funcionalidades, podemos planejar as próximas sprints de desenvolvimento.
+Sugestão para organização
+📋 Próximas possíveis etapas:
+1. Frontend (telas de login, dashboard)
+2. Regras de negócio de agendamento
+3. Validações específicas
+4. Notificações
+5. Relatórios
+6. Testes
+7. Deploy prod
