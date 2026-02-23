@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: medschedule-postgres
+    environment:
+      POSTGRES_DB: medschedule_db
+      POSTGRES_USER: medschedule_user
+      POSTGRES_PASSWORD: medschedule_password
+    ports:
+      - "54320:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - medschedule-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medschedule_user -d medschedule_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: medschedule-backend
+    environment:
+      - DATABASE_URL=postgresql://medschedule_user:medschedule_password@postgres:5432/medschedule_db
+      - SECRET_KEY=dev-secret-key-change-in-production
+    ports:
+      - "50800:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - medschedule-network
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    container_name: medschedule-frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:50800
+    ports:
+      - "50300:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - medschedule-network
+    restart: unless-stopped
+
+  pm2:
+    image: keymetrics/pm2:latest-alpine
+    container_name: medschedule-pm2
+    volumes:
+      - ./infra/pm2/ecosystem.config.js:/app/ecosystem.config.js
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+    ports:
+      - "50301:3001"
+    working_dir: /app
+    networks:
+      - medschedule-network
+    restart: unless-stopped
+    command: pm2-runtime start ecosystem.config.js
+
+networks:
+  medschedule-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
